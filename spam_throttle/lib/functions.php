@@ -1,7 +1,7 @@
 <?php
 
 /**
-* ban user if sending too many messages
+* check if a user is over the threshold for content creation
 *
 * @param string $event
 * @param string $object_type
@@ -37,8 +37,8 @@ function spam_throttle_check($event, $object_type, $object) {
 	// They've made it this far, time to check if they've exceeded limits or not
 	
 	// first check for global setting
-	$globallimit = 5;//get_plugin_setting('global_limit', 'spam_throttle');
-	$globaltime = 5;//get_plugin_setting('global_time', 'spam_throttle');
+	$globallimit = get_plugin_setting('global_limit', 'spam_throttle');
+	$globaltime = get_plugin_setting('global_time', 'spam_throttle');
 	
 	if(is_numeric($globallimit) && $globallimit > 0 && is_numeric($globaltime) && $globaltime > 0){
 		
@@ -68,15 +68,65 @@ function spam_throttle_check($event, $object_type, $object) {
 		}
 	}
 	
-	// if we're still going now we haven't exceeded globals, check for individual types
+	if($object_type == 'object'){
+		// 	if we're still going now we haven't exceeded globals, check for individual types
+		$limit = get_plugin_setting($object->getSubtype().'_limit', 'spam_throttle');
+		$time = get_plugin_setting($object->getSubtype().'_time', 'spam_throttle');
+	
+		if(is_numeric($limit) && $limit > 0 && is_numeric($time) && $time > 0){
+		
+			// because 2 are created initially
+			if($object->getSubtype() == 'messages'){
+				$limit++;
+			}
+		
+			// 	we have globals set, lets give it a test
+			$params = array(
+				'type' => 'object',
+				'subtypes' => array($object->getSubtype()),
+				'created_time_lower' => time() - ($time * 60),
+				'owner_guids' => array(get_loggedin_userid()),
+				'count' => TRUE,
+			);
+		
+			$entitycount = elgg_get_entities($params);
+		
+			if($entitycount > $limit){
+				spam_throttle_limit_exceeded($time, $entitycount, $object->getSubtype());
+			
+				// not returning false in case of false positive
+				return;
+			}
+		}
+		return;
+	}
+	
+	// now we check for comments
+	if($object_type == 'annotation'){
+		if($object->name == 'generic_comment'){
+			$limit = get_plugin_setting('annotation_generic_comment_limit', 'spam_throttle');
+			$time = get_plugin_setting('annotation_generic_comment_time', 'spam_throttle');
+	
+			if(is_numeric($limit) && $limit > 0 && is_numeric($time) && $time > 0){
+
+				$commentcount = count_annotations(0, "", "", "generic_comment", "", "", get_loggedin_userid(), time() - (60*$time), 0);
+			
+				if($commentcount > $limit){
+					spam_throttle_limit_exceeded($time, $commentcount, 'generic_comment');
+				
+					// not returning false in case of false positive
+					return;
+				}
+			}
+			return;
+		}
+		return;
+	}
 }
 
 
 function spam_throttle_limit_exceeded($time, $created, $type){
-	$action = "suspend"; //get_plugin_setting('action', 'spam_throttle');
-	
-	// four possibilities here, report & do nothing, report & suspend posting (but they can still log in - read only), report & ban, delete
-	// deleting will also delete the report, so save the logic and report everything
+		
 	$report = new ElggObject;
 	$report->subtype = "reported_content";
 	$report->owner_guid = get_loggedin_userid();
@@ -85,22 +135,32 @@ function spam_throttle_limit_exceeded($time, $created, $type){
 	$report->description = sprintf(elgg_echo('spam_throttle:reported'), $type, $created, $time);
 	$report->access_id = ACCESS_PRIVATE;
 	$report->save();
-
-	if($action == "suspend"){
-		$user = get_loggedin_user();
-		$suspensiontime = 24; //get_plugin_setting('suspensiontime', 'spam_throttle');
-		$user->spam_throttle_suspension = time() + 60*60*$suspensiontime;
-		register_error(sprintf(elgg_echo('spam_throttle:suspended'), $suspensiontime, '0'));	
-	}
 	
-	if($action == "ban"){
-		ban_user(get_loggedin_userid(), elgg_echo('spam_throttle:banned'));
-		register_error(elgg_echo('spam_throttle:banned'));
-	}
+	$action = get_plugin_setting('action', 'spam_throttle');
 	
-	if($action == "delete"){
-		$user = get_loggedin_user();
-		$user->delete();
-		register_error(elgg_echo('spam_throttle:deleted'));
+	switch ($action){
+		case "nothing":
+			break;
+		
+		case "suspend":
+			$user = get_loggedin_user();
+			$suspensiontime = get_plugin_setting('suspensiontime', 'spam_throttle');
+			$user->spam_throttle_suspension = time() + 60*60*$suspensiontime;
+			register_error(sprintf(elgg_echo('spam_throttle:suspended'), $suspensiontime, '0'));
+			break;
+			
+		case "ban":
+			ban_user(get_loggedin_userid(), elgg_echo('spam_throttle:banned'));
+			register_error(elgg_echo('spam_throttle:banned'));
+			break;
+			
+		case "delete":
+			$user = get_loggedin_user();
+			$user->delete();
+			register_error(elgg_echo('spam_throttle:deleted'));
+			break;
+			
+		default:
+			break;
 	}
 }
