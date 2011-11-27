@@ -75,11 +75,19 @@ $form .= " " . elgg_echo('spam_throttle:helptext:suspensiontime') . "<br><br>";
 $allusers = elgg_get_entities(array('types' => array('user'), 'limit' => 0));
 $exempt = unserialize(get_plugin_setting('exempt', 'spam_throttle'));
 
+if(!is_array($allusers)){
+	$allusers = array();
+}
+
 $admin = array();
 foreach($allusers as $user){
 	if($user->isAdmin()){
 		$admin[] = $user->guid;
 	}
+}
+
+if(!is_array($exempt)){
+	$exempt = array();
 }
 
 $exempt = array_merge($exempt, $admin);
