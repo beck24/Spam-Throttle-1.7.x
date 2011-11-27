@@ -19,7 +19,7 @@ function spam_throttle_pagesetup() {
 
 	if (get_context() == 'admin' && isadminloggedin()) {
 		global $CONFIG;
-		add_submenu_item(elgg_echo('spam_throttle:settings'), $CONFIG->wwwroot . 'pg/spam_throttle/edit.php');
+		add_submenu_item(elgg_echo('spam_throttle:settings'), $CONFIG->wwwroot . 'pg/spam_throttle/');
 	}
 }
 
@@ -32,6 +32,6 @@ function spam_throttle_page_handler()
 }
 
 //register action to save our plugin settings
-register_action("spam_throttle_settings", false, $CONFIG->pluginspath . "spam_throttle/actions/spam_throttle_settings.php", true);
+register_action("spam_throttle/settings", false, $CONFIG->pluginspath . "spam_throttle/actions/spam_throttle_settings.php", true);
 
 register_elgg_event_handler('init', 'system', 'spam_throttle_init');

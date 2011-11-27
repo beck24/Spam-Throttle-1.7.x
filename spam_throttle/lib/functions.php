@@ -136,9 +136,9 @@ function spam_throttle_limit_exceeded($time, $created, $type){
 	$report->access_id = ACCESS_PRIVATE;
 	$report->save();
 	
-	$action = get_plugin_setting('action', 'spam_throttle');
+	$consequence = get_plugin_setting('consequence', 'spam_throttle');
 	
-	switch ($action){
+	switch ($consequence){
 		case "nothing":
 			break;
 		
@@ -163,4 +163,13 @@ function spam_throttle_limit_exceeded($time, $created, $type){
 		default:
 			break;
 	}
+}
+
+// checks whether a value is a positive integer
+// returns boolean true/false
+function spam_throttle_posint($value){
+	if(is_numeric($value) && $value > 0){
+		return TRUE;
+	}
+	return FALSE;
 }
