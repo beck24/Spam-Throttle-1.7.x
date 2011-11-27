@@ -71,12 +71,24 @@ $form .= "<h2>" . elgg_echo('spam_throttle:suspensiontime') . "</h2><br>";
 $form .= elgg_view('input/text', array('internalname' => 'settings[suspensiontime]', 'value' => !empty($value) ? $value : 24, 'js' => 'style="width: 50px"'));
 $form .= " " . elgg_echo('spam_throttle:helptext:suspensiontime') . "<br><br>";
 
+// get all site admins
+$allusers = elgg_get_entities(array('types' => array('user'), 'limit' => 0));
+$exempt = unserialize(get_plugin_setting('exempt', 'spam_throttle'));
+
+$admin = array();
+foreach($allusers as $user){
+	if($user->isAdmin()){
+		$admin[] = $user->guid;
+	}
+}
+
+$exempt = array_merge($exempt, $admin);
 
 // exemptions
 $pickeropts = array(
 	'internalname' => 'exempt',
-	'value' => unserialize(get_plugin_setting('exempt', 'spam_throttle')),
-	'entities' => elgg_get_entities(array('types' => array('user'), 'limit' => 0)),
+	'value' => $exempt,
+	'entities' => $allusers,
 );
 $form .= "<h2>" . elgg_echo('spam_throttle:exemptions') . "</h2><br>";
 $form .= elgg_view('friends/picker', $pickeropts);
