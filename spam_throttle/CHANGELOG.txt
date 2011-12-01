@@ -9,3 +9,7 @@ Admin now correctly checked in picker to show exemption from throttling.
 
 v1.2
 Fixed an issue that prevented new users from registering
+
+12/01/2011
+v1.3
+Added admin "unsuspend" functionality
