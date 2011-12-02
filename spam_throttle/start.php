@@ -8,7 +8,9 @@ function spam_throttle_init(){
 	// Load the language file
 	register_translations($CONFIG->pluginspath . "spam_throttle/languages/");
 	
-	elgg_extend_view('profile/menu/adminlinks', 'profile/spam_throttle-pre-adminlinks', 0);
+	if(isadminloggedin()){
+		elgg_extend_view('profile/menu/adminlinks', 'profile/spam_throttle-pre-adminlinks', 0);
+	}
 	
 	register_page_handler('spam_throttle','spam_throttle_page_handler');
 	
