@@ -13,3 +13,6 @@ Fixed an issue that prevented new users from registering
 12/01/2011
 v1.3
 Added admin "unsuspend" functionality
+
+v1.4
+*Only* admin can unsuspend!  Oops!
