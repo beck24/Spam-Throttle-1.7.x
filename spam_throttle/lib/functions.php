@@ -20,6 +20,12 @@ function spam_throttle_check($event, $object_type, $object) {
 		return;
 	}
 	
+	if(!$object){
+	  // can happen if creating under a different user with overridden permissions
+	  // for now we'll just release them
+	  return;
+	}
+	
 	// reported content doesn't count (also this prevents an infinite loop...)
 	if($object->getSubtype() == 'reported_content'){
 		return;
